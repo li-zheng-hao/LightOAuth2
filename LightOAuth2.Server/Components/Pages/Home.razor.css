@@ -1,0 +1,5 @@
+﻿h1{
+}
+::deep .mud-card-actions {
+    background: red !important;
+}

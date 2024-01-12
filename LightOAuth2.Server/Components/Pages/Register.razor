@@ -1,0 +1,49 @@
+﻿@page "/register"
+@inject IJSRuntime JS
+
+<div>
+    <Card Title="用户注册" Style="width:50vw;margin:20px">
+        <div style="display:flex;flex-direction:column;gap:20px;margin:10px 0px">
+            <Input Placeholder="用户名" @bind-Value="@UserName" />
+            <InputPassword Placeholder="密码" @bind-Value="@Password" />
+            <InputPassword Placeholder="密码确认" @bind-Value="@RepeatPassword" />
+        </div>
+        <div style="display:flex;gap:10px;margin-top:20px">
+            <Button OnClick="OnClick">确认</Button>
+        </div>
+      
+
+    </Card>
+</div>
+
+@code {
+    @inject IMessageService _message
+
+    public string UserName { get; set; }
+    public string Password { get; set; }
+    public string RepeatPassword { get; set; }
+
+    bool isShow;
+
+
+    protected override async Task OnAfterRenderAsync(bool first)
+    {
+        // await JS.InvokeVoidAsync("alert", "hello");
+
+    }
+    private void OnClick()
+    {
+        _message.Info("点击了登录");
+    }
+
+}
+
+<style>
+    .ant-input {
+        width: 300px;
+    }
+
+    .ant-input-password {
+        width: 300px;
+    }
+</style>

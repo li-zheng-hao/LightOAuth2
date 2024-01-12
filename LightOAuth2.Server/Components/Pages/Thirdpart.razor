@@ -1,0 +1,17 @@
+﻿@page "/thirdpart"
+<div style="margin:50px;">
+    <h3>模拟跳转的第三方应用页面</h3>
+    <div>
+        如果RedirectUri参数为空，则会跳转到这个页面
+    </div>
+    <div>
+        返回的code为：@Code
+    </div>
+</div>
+
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? Code{ get; set; }
+
+}

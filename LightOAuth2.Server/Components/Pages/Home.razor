@@ -1,0 +1,180 @@
+﻿@page "/"
+@using LightOAuth2.Server.Core
+@using LightOAuth2.Server.Services
+@using System.ComponentModel
+@using System.Diagnostics
+@using System.ComponentModel.DataAnnotations
+@using LightOAuth2.Server.ViewModels
+@inject IJSRuntime JS
+@implements IDisposable
+
+<div>
+    @if (UserStateContainer.IsLogin == null)
+    {
+    }
+    else if (UserStateContainer.IsLogin == true)
+    {
+        <Card Title="授权列表" Style="width:50vw;margin:20px;">
+            <div style="display:flex;flex-direction:column;gap:20px;">
+                <CheckboxGroup Style="width:50%">
+                    <Flex Gap="middle" Vertical>
+                     <Checkbox Label="用户ID" Checked="true"></Checkbox>
+                     <Checkbox Label="用户基本信息(用户名、手机号、邮箱等)"></Checkbox>
+                 </Flex>
+
+             </CheckboxGroup>
+             <div>
+                 <Button Style="width:120px;margin-right:10px" Type="@ButtonType.Primary" OnClick="OnConfirmAuthorize">确认授权登录</Button>
+                 <Button Style="width:120px;" OnClick="OnConfirmCancel">取消授权</Button>
+             </div>
+
+         </div>
+
+     </Card>
+    }
+    else
+    {
+        <Card Title="用户登录" Style="width:50vw;margin:20px">
+            <Form Model="@Model"
+                 Style="margin:0"
+                  LabelColSpan="8"
+                  WrapperColSpan="16">
+                <FormItem Label="用户名">
+                    <Input @bind-Value="@context.Username" />
+                </FormItem>
+                <FormItem Label="密码">
+                    <InputPassword @bind-Value="@context.Password" />
+                </FormItem>
+               
+                <FormItem WrapperColOffset="8" WrapperColSpan="16">
+                    <Button Type="@ButtonType.Primary" HtmlType="submit" OnClick="OnLogin">
+                        登录
+                    </Button>
+                    <Button Type="@ButtonType.Link" OnClick="OnRegister">注册</Button>
+                    <Button Type="@ButtonType.Link" OnClick="OnForget">忘记密码</Button>
+                </FormItem>
+            </Form>
+        </Card>
+    }
+
+</div>
+
+@code {
+@inject IMessageService _message
+    @inject NavigationManager navigationManager
+    @inject AuthenticationService authenticationService
+    @inject UserService userService
+
+    public LoginModel Model { get; set; } = new();
+    [Inject]
+    public UserStateContainer UserStateContainer { get; set; }
+
+
+    public void PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        Debug.WriteLine("触发");
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        UserStateContainer.PropertyChanged -= PropertyChanged;
+    }
+
+    /// <summary>
+    /// 跳转URI
+    /// </summary>
+    [SupplyParameterFromQuery]
+    [Parameter]
+    public string? RedirectUri { get; set; }
+
+    /// <summary>
+    /// 第三方ID
+    /// </summary>
+    [SupplyParameterFromQuery]
+    [Parameter]
+    public string? ClientId { get; set; }
+
+    /// <summary>
+    /// 第三方秘钥
+    /// </summary>
+    [SupplyParameterFromQuery]
+    [Parameter]
+    public string? ClientSecret { get; set; }
+
+    /// <summary>
+    /// 申请权限
+    /// </summary>
+    [SupplyParameterFromQuery]
+    [Parameter]
+    public string? Scopes { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool first)
+    {
+        if (first)
+        {
+            UserStateContainer.PropertyChanged += PropertyChanged;
+        }
+
+
+    }
+
+    private async Task OnLogin()
+    {
+        var res = await userService.Login(Model.Username, Model.Password);
+        if (res)
+        {
+            UserStateContainer.IsLogin = true;
+            await _message.Success("登录成功");
+
+        }
+        else
+        {
+            await _message.Error("登录失败");
+        }
+    }
+
+    private void OnRegister()
+    {
+        navigationManager.NavigateTo("/register");
+    }
+
+    private async Task OnForget()
+    {
+        // await authorizeService.IsLoginAsync();
+        // navigationManager.NavigateTo("/forget");
+    }
+
+    private void OnConfirmAuthorize()
+    {
+        _message.Success($"确认授权完成，跳转{RedirectUri}");
+        if (!string.IsNullOrWhiteSpace(RedirectUri))
+            navigationManager.NavigateTo(RedirectUri);
+        else
+        {
+            navigationManager.NavigateTo("/thirdpart?code=123");
+
+        }
+    }
+
+    private void OnConfirmCancel()
+    {
+        _message.Success("取消授权完成，跳转");
+        navigationManager.NavigateTo("/thirdpart");
+    }
+
+}
+
+<style>
+    .ant-input {
+        width: 300px;
+    }
+
+    .ant-input-password {
+        width: 300px;
+    }
+
+    .ant-spin-nested-loading{
+        margin-left:-300px;
+    }
+</style>
