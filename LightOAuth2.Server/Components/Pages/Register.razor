@@ -17,23 +17,20 @@
 </div>
 
 @code {
-    @inject IMessageService _message
+    [Inject]
+    IMessageService message { get; set; }
 
     public string UserName { get; set; }
     public string Password { get; set; }
     public string RepeatPassword { get; set; }
 
-    bool isShow;
-
-
     protected override async Task OnAfterRenderAsync(bool first)
     {
         // await JS.InvokeVoidAsync("alert", "hello");
-
     }
     private void OnClick()
     {
-        _message.Info("点击了登录");
+        message.Info("点击了登录");
     }
 
 }

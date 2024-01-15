@@ -1,7 +1,8 @@
 using Blazored.LocalStorage;
 using LightOAuth2.Server.Components;
-using LightOAuth2.Server.Core;
 using LightOAuth2.Server.Services;
+using LightOAuth2.Server.State;
+using LightOAuth2.Service.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+builder.Services.AddControllers();
 
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
@@ -18,7 +20,7 @@ builder.Services.AddScoped<AuthorizeService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<AuthenticationService>();
 builder.Services.AddScoped<UserStateContainer>();
-builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<CookieSimulateService>();
 
 builder.Services.AddBlazoredLocalStorage();
 
@@ -37,6 +39,8 @@ app.UseStaticFiles();
 
 
 app.UseAntiforgery();
+
+app.MapControllers();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

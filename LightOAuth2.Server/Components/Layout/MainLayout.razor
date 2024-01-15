@@ -1,5 +1,6 @@
-﻿@using LightOAuth2.Server.Core
-@using LightOAuth2.Server.Services
+﻿@using LightOAuth2.Server.Services
+@using LightOAuth2.Server.State
+@using LightOAuth2.Service.Services
 @using System.ComponentModel
 @inherits LayoutComponentBase
 @implements IDisposable
@@ -10,7 +11,7 @@
 
         <PageHeaderExtra>
             <Button OnClick="GoHome">主页</Button>
-            @if (UserStateContainer.IsLogin == false)
+            @if (userStateContainer.IsLogin == false)
             {
                 <Button OnClick="Login">登录</Button>
             }
@@ -25,44 +26,53 @@
 
 @code {
     public string Title { get; set; } = "OAuth2统一登录中心";
-    @inject NavigationManager navigationManager
-    @inject AuthenticationService authenticationService
-    @inject UserService userService
     [Inject]
-    public UserStateContainer UserStateContainer{ get; set; }
-    
+    NavigationManager navigationManager{get;set;}
+    [Inject]
+    AuthenticationService authenticationService{get;set;}
+    [Inject]
+    UserService userService { get; set; }
+    [Inject]
+    CookieSimulateService cookieSimulateService{ get; set; }
+    [Inject]
+    AuthorizeService authorizeService { get; set; }
+    [Inject]
+    public UserStateContainer userStateContainer{ get; set; }
+
     protected override void OnInitialized()
     {
-        UserStateContainer.PropertyChanged += PropertyChanged;
+        userStateContainer.PropertyChanged += PropertyChanged;
 
     }
-    public void PropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        StateHasChanged();
-    }
+
+    public void PropertyChanged(object? sender, PropertyChangedEventArgs e) => StateHasChanged();
 
     public void Dispose()
     {
-        UserStateContainer.PropertyChanged -= PropertyChanged;
+        userStateContainer.PropertyChanged -= PropertyChanged;
     }
-    protected override async Task OnAfterRenderAsync(bool first)
+    protected override async Task OnInitializedAsync()
     {
-        if (first)
+        userStateContainer.PropertyChanged += PropertyChanged;
+        if (await authorizeService.IsLoginAsync())
         {
-            UserStateContainer.PropertyChanged += PropertyChanged;
-            if (await authenticationService.IsLoginAsync())
-            {
-                UserStateContainer.IsLogin = true;
-            }
-            else
-            {
-                UserStateContainer.IsLogin = false;
-            }
+            userStateContainer.IsLogin = true;
         }
-
-        
+        else
+        {
+            userStateContainer.IsLogin = false;
+        }
+    }
+    protected override async System.Threading.Tasks.Task OnAfterRenderAsync(bool firstRender)
+    {
+        await cookieSimulateService.RefreshAsync("token",TimeSpan.FromDays(7));
     }
 
+    void GoManagement()
+    {
+        navigationManager.NavigateTo("/manage");
+
+    }
     private void GoHome()
     {
         navigationManager.NavigateTo("/");
@@ -70,14 +80,14 @@
     }
     private void Login()
     {
-        UserStateContainer.IsLogin = false;
+        userStateContainer.IsLogin = false;
         navigationManager.NavigateTo("/");
     }
     private async Task LogOut()
     {
        
         await authenticationService.SignOutAsync();
-        UserStateContainer.IsLogin = false;
+        userStateContainer.IsLogin = false;
         navigationManager.NavigateTo("/");
     }
 

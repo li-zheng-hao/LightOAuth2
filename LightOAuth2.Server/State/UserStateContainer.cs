@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace LightOAuth2.Server.Core
+namespace LightOAuth2.Server.State
 {
     public class UserStateContainer : INotifyPropertyChanged
     {

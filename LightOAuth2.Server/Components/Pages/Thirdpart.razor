@@ -1,4 +1,6 @@
 ﻿@page "/thirdpart"
+@using Flurl
+@using Flurl.Http
 <div style="margin:50px;">
     <h3>模拟跳转的第三方应用页面</h3>
     <div>
@@ -7,11 +9,52 @@
     <div>
         返回的code为：@Code
     </div>
-</div>
+
+    <Button OnClick="GetAccessToken">用Code换取AccessToken等数据</Button>
+    <Input ReadOnly @bind-Value="@UserTicket">
+    </Input>
+     <Button OnClick="GetUserInfo">用AccessToken查询用户信息</Button>
+     <Input ReadOnly @bind-Value="@UserData">  </Input>
 
 
-@code {
+ </div>
+
+
+ @code {
+
+    [Inject]
+    IMessageService messageService { get; set; }
+
     [SupplyParameterFromQuery]
-    public string? Code{ get; set; }
+    public string? Code { get; set; }
+
+    public string UserTicket { get; set; }
+
+    public string UserData { get; set; }
+
+    async Task GetAccessToken()
+    {
+        var data = await "http://localhost:5173/connect/oauth2/access_token"
+        .SetQueryParam("code", Code)
+        .SetQueryParam("clientId", "test")
+        .SetQueryParam("clientSecret", "test")
+        .GetStringAsync();
+        UserTicket = data;
+
+    }
+
+    async Task GetUserInfo()
+    {
+        if (string.IsNullOrWhiteSpace(UserTicket))
+        {
+            await messageService.Info("请先获取accessToken");
+            return;
+        }
+        var data = await "http://localhost:5173/connect/oauth2/user_info"
+        .SetQueryParam("accessToken", "access_token")
+        .SetQueryParam("userId", 1)
+        .GetStringAsync();
+        UserData = data;
+    }
 
 }

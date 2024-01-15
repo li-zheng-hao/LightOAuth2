@@ -1,10 +1,11 @@
-﻿@page "/"
-@using LightOAuth2.Server.Core
-@using LightOAuth2.Server.Services
+﻿@page "/connect/oauth2/authorize"
 @using System.ComponentModel
 @using System.Diagnostics
 @using System.ComponentModel.DataAnnotations
+@using LightOAuth2.Server.Services
+@using LightOAuth2.Server.State
 @using LightOAuth2.Server.ViewModels
+@using LightOAuth2.Service.Services
 @inject IJSRuntime JS
 @implements IDisposable
 
@@ -16,15 +17,13 @@
     {
         <Card Title="授权列表" Style="width:50vw;margin:20px;">
             <div style="display:flex;flex-direction:column;gap:20px;">
-                <CheckboxGroup Style="width:50%">
                     <Flex Gap="middle" Vertical>
-                     <Checkbox Label="用户ID" Checked="true"></Checkbox>
-                     <Checkbox Label="用户基本信息(用户名、手机号、邮箱等)"></Checkbox>
+                     <Checkbox Label="用户ID" Checked="true" Disabled="true"></Checkbox>
+                     <Checkbox Label="用户基本信息(用户名、手机号、邮箱等)" Checked="true" Disabled="true"></Checkbox>
                  </Flex>
 
-             </CheckboxGroup>
              <div>
-                 <Button Style="width:120px;margin-right:10px" Type="@ButtonType.Primary" OnClick="OnConfirmAuthorize">确认授权登录</Button>
+                 <Button Style="width:120px;margin-right:10px" Type="@ButtonType.Primary" OnClick="OnConfirmAuthorize">授权登录</Button>
                  <Button Style="width:120px;" OnClick="OnConfirmCancel">取消授权</Button>
              </div>
 
@@ -34,9 +33,9 @@
     }
     else
     {
-        <Card Title="用户登录" Style="width:50vw;margin:20px">
+        <Card Title="用户登录" Style="width:50vw;margin:20px;min-width:500px">
             <Form Model="@Model"
-                 Style="margin:0"
+                  Style="margin:0"
                   LabelColSpan="8"
                   WrapperColSpan="16">
                 <FormItem Label="用户名">
@@ -45,7 +44,7 @@
                 <FormItem Label="密码">
                     <InputPassword @bind-Value="@context.Password" />
                 </FormItem>
-               
+
                 <FormItem WrapperColOffset="8" WrapperColSpan="16">
                     <Button Type="@ButtonType.Primary" HtmlType="submit" OnClick="OnLogin">
                         登录
@@ -60,14 +59,20 @@
 </div>
 
 @code {
-@inject IMessageService _message
-    @inject NavigationManager navigationManager
-    @inject AuthenticationService authenticationService
-    @inject UserService userService
+    [Inject]
+    IMessageService message { get; set; }
+    [Inject]
+    NavigationManager navigationManager { get; set; }
+
+    [Inject]
+    AuthenticationService authenticationService { get; set; }
+    [Inject]
+    UserService userService { get; set; }
 
     public LoginModel Model { get; set; } = new();
+
     [Inject]
-    public UserStateContainer UserStateContainer { get; set; }
+    UserStateContainer UserStateContainer { get; set; }
 
 
     public void PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -109,14 +114,9 @@
     [Parameter]
     public string? Scopes { get; set; }
 
-    protected override async Task OnAfterRenderAsync(bool first)
+    protected override async Task OnInitializedAsync()
     {
-        if (first)
-        {
-            UserStateContainer.PropertyChanged += PropertyChanged;
-        }
-
-
+        UserStateContainer.PropertyChanged += PropertyChanged;
     }
 
     private async Task OnLogin()
@@ -125,12 +125,12 @@
         if (res)
         {
             UserStateContainer.IsLogin = true;
-            await _message.Success("登录成功");
+            await message.Success("登录成功");
 
         }
         else
         {
-            await _message.Error("登录失败");
+            await message.Error("登录失败");
         }
     }
 
@@ -147,19 +147,20 @@
 
     private void OnConfirmAuthorize()
     {
-        _message.Success($"确认授权完成，跳转{RedirectUri}");
+        message.Success($"确认授权完成，跳转{RedirectUri}");
+        var code=authenticationService.GenerateCode();
         if (!string.IsNullOrWhiteSpace(RedirectUri))
             navigationManager.NavigateTo(RedirectUri);
         else
         {
-            navigationManager.NavigateTo("/thirdpart?code=123");
+            navigationManager.NavigateTo($"/thirdpart?code={code}");
 
         }
     }
 
     private void OnConfirmCancel()
     {
-        _message.Success("取消授权完成，跳转");
+        message.Success("取消授权完成，跳转");
         navigationManager.NavigateTo("/thirdpart");
     }
 
@@ -174,5 +175,12 @@
         width: 300px;
     }
 
-   
+    .ant-checkbox-wrapper + .ant-checkbox-wrapper{
+        margin-left: 0;
+    }
+
+    .ant-checkbox-disabled + span{
+      color: rgba(0, 0, 0, 0.65);
+    }
+
 </style>

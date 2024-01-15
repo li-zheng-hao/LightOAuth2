@@ -1,0 +1,11 @@
+﻿@page "/"
+<h3>RootPage</h3>
+
+@code {
+    [Inject]
+    NavigationManager navigationManager{ get; set; }
+    protected override async Task OnInitializedAsync()
+    {
+        navigationManager.NavigateTo("/connect/oauth2/authorize");
+    }
+}
